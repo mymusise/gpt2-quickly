@@ -6,7 +6,11 @@ GPT2 Quickly
 <p>Build your own GPT2 quickly, without doing many useless work.
 </h3>
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mymusise/gpt2-quickly/blob/main/examples/gpt2_quickly.ipynb)
+<p align="center">
+    <a href="https://colab.research.google.com/github/mymusise/gpt2-quickly/blob/main/examples/gpt2_quickly.ipynb">
+        <img alt="Build" src="https://colab.research.google.com/assets/colab-badge.svg">
+    </a>
+</p>
 
 This project is base on 🤗 transformer. This tutorial show how to train your own GPT2 model in a few code with Tensorflow 2.
 
@@ -14,9 +18,8 @@ This project is base on 🤗 transformer. This tutorial show how to train your o
 
 ``` 
 
-├── build_tokenizer.py
 ├── configs
-│   ├── __init__.py
+├── build_tokenizer.py
 │   ├── test.py
 │   └── train.py
 ├── predata.py
