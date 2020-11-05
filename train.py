@@ -1,13 +1,9 @@
 import tensorflow as tf
-from transformers import TFGPT2Model, GPT2Config, TFGPT2LMHeadModel
-from transformers import TFTrainer, TFTrainingArguments
+from transformers import GPT2Config, TFGPT2LMHeadModel
 from transformers import TFGPT2LMHeadModel
-from transformers import BertTokenizer, BertTokenizerFast, GPT2Tokenizer
+from transformers import BertTokenizer
 from transformers import GPT2Config
-import tensorflow_addons as tfa
-import json
 import configs
-import numpy as np
 from transformers import TextGenerationPipeline
 import time
 import pickle

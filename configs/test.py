@@ -14,9 +14,9 @@ model = {
     'n_positions': 512,
     'n_ctx': 512,
     'n_embd': 768,
-    'n_layer': 6,
-    'n_head': 6,
-    'batch_size': 12
+    'n_layer': 8,
+    'n_head': 8,
+    'batch_size': 6
 }
 
 
