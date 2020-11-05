@@ -1,9 +1,11 @@
 *.log
 *.txt
+*.pickle
 logs/
 
-dataset/*
-!*test/raw.txt
+./dataset/*
+!*/test/raw.txt
+!*/test/vocab.txt
 
 venv/
 envs/
