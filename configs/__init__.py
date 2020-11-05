@@ -1,6 +1,6 @@
 import os
 
-if os.environ.get('ENV', 'PRO') == 'PRO':
+if os.environ.get('ENV', 'DEV') == 'PRO':
     from .train import *
 else:
     from .test import *
