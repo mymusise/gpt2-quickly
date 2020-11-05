@@ -1,0 +1,16 @@
+*.log
+*.txt
+logs/
+
+dataset/*
+!*test/raw.txt
+
+venv/
+envs/
+env/
+.vscode/
+
+models*
+checkpoint
+
+*.pyc
