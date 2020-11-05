@@ -1,4 +1,6 @@
-# GPT2 Quickly
+<h1 align="center">
+GPT2 Quickly
+</h1>
 
 <h3 align="center">
 <p>Build your own GPT2 quickly, without doing many useless work.
