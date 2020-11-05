@@ -85,9 +85,6 @@ def train():
         def on_epoch_end(self, epoch, logs=None):
             self.model.save_pretrained(f'{configs.model_path}')
 
-            print(text_generator("大", max_length=5, do_sample=False))
-            print(text_generator("大千", max_length=int(
-                max_length / 2), do_sample=False))
 
     callbacks = [
         tf.keras.callbacks.TensorBoard(log_dir='./logs'),
@@ -97,7 +94,7 @@ def train():
     ]
 
     t1 = time.time()
-    model.fit(train_dataset, epochs=50, callbacks=callbacks, batch_size=12)
+    model.fit(train_dataset, epochs=20, callbacks=callbacks, batch_size=12)
 
     print(text_generator("大江东去", max_length=int(max_length / 2), do_sample=False))
     print(f'total train time {t1 - time.time()}')
