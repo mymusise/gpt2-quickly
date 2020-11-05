@@ -19,9 +19,9 @@ This project is base on 🤗 transformer. This tutorial show how to train your o
 ``` 
 
 ├── configs
-├── build_tokenizer.py
 │   ├── test.py
 │   └── train.py
+├── build_tokenizer.py
 ├── predata.py
 ├── predict.py
 └── train.py
