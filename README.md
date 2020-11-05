@@ -6,7 +6,7 @@ GPT2 Quickly
 <p>Build your own GPT2 quickly, without doing many useless work.
 </h3>
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mymusise/gpt2-quickly/blob/main/examples/ai_noval_demo.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/mymusise/gpt2-quickly/blob/main/examples/gpt2_quickly.ipynb)
 
 This project is base on 🤗 transformer. This tutorial show how to train your own GPT2 model in a few code with Tensorflow 2.
 
