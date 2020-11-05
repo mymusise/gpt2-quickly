@@ -1,3 +1,5 @@
 transformers
 tokenizers
 tensorflow
+tqdm
+click

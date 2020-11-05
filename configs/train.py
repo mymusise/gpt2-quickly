@@ -1,4 +1,4 @@
-path = '/data/novels'
+path = '/data/wiki_zh'
 model_path = path + '/models/'
 
 data = {
@@ -10,13 +10,13 @@ data['pickle'] = data['path'] + 'data.pickle'
 
 
 model = {
-    'max_length': 120,
+    'max_length': 512,
     'n_positions': 512,
     'n_ctx': 512,
     'n_embd': 768,
-    'n_layer': 12,
-    'n_head': 12,
-    'batch_size': 6
+    'n_layer': 24,
+    'n_head': 24,
+    'batch_size': 2
 }
 
 

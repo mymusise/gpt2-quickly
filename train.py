@@ -14,7 +14,8 @@ max_length = configs.model.max_length
 
 def load_tokenizer() -> BertTokenizer:
     tokenizer = BertTokenizer.from_pretrained(
-        configs.data.path, max_len=max_length-1)
+        configs.data.path, max_len=max_length)
+    tokenizer.return_attention_mask = None
     return tokenizer
 
 
@@ -79,12 +80,13 @@ def train():
 
     class AutoSaveCallback(tf.keras.callbacks.Callback):
         def on_train_batch_begin(self, batch, logs=None):
-            if (batch + 1) % 2000 == 0:
-                self.model.save_pretrained(f'{configs.model_path}{batch}')
+            save_pre_step = 5000
+            if batch % save_pre_step == 0:
+                self.model.save_pretrained(
+                    f'{configs.model_path}{batch // save_pre_step}')
 
         def on_epoch_end(self, epoch, logs=None):
             self.model.save_pretrained(f'{configs.model_path}')
-
 
     callbacks = [
         tf.keras.callbacks.TensorBoard(log_dir='./logs'),

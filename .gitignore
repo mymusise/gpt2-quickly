@@ -15,5 +15,6 @@ env/
 
 models*
 checkpoint
+configs/train.py
 
 *.pyc
