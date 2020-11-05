@@ -6,6 +6,7 @@ logs/
 ./dataset/*
 !*/test/raw.txt
 !*/test/vocab.txt
+!requirements.txt
 
 venv/
 envs/
