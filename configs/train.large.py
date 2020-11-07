@@ -13,10 +13,10 @@ model = {
     'max_length': 1024,
     'n_positions': 1024,
     'n_ctx': 1024,
-    'n_embd': 1024,
-    'n_layer': 24,
-    'n_head': 16,
-    'batch_size': 6
+    'n_embd': 1280,
+    'n_layer': 36,
+    'n_head': 20,
+    'batch_size': 2
 }
 
 
