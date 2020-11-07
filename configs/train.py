@@ -4,10 +4,12 @@ model_path = path + '/models/'
 data = {
     'path': path + '/train/',
 }
-data['raw'] = data['path'] + 'raw.txt'
-data['vocab'] = data['path'] + 'vocab.txt'
-data['pickle'] = data['path'] + 'data.pickle'
-
+data = {
+    **data,
+    'raw': data['path'] + 'raw.txt',
+    'vocab': data['path'] + 'vocab.txt',
+    'pickle': data['path'] + 'data.pickle',
+}
 
 model = {
     'max_length': 1024,
