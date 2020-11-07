@@ -22,8 +22,6 @@ def load_tokenizer() -> BertTokenizer:
 def get_dataset() -> tf.data.Dataset:
     print(f"loading {configs.data.pickle}")
     ids, labels = pickle.load(open(configs.data.pickle, 'rb'))
-    print(ids[:5])
-    print(labels[:5])
     print(ids.shape, labels.shape, ids.dtype, labels.dtype)
     dataset = tf.data.Dataset.from_tensor_slices((
         ids,
@@ -56,8 +54,8 @@ def init_model(tokenizer) -> TFGPT2LMHeadModel:
         )
         model = TFGPT2LMHeadModel(config)
 
-    loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
-    optimizer = tf.keras.optimizers.Adam(learning_rate=3e-5, epsilon=1e-08)
+    loss = model.compute_loss
+    optimizer = tf.keras.optimizers.Adam(learning_rate=1e-5, epsilon=1e-08)
     metrics = [
         tf.keras.metrics.SparseCategoricalAccuracy('accuracy')
     ]
@@ -89,16 +87,14 @@ def train():
             self.model.save_pretrained(f'{configs.model_path}')
 
     callbacks = [
-        tf.keras.callbacks.TensorBoard(log_dir='./logs'),
-        tf.keras.callbacks.ModelCheckpoint(filepath='./models',
+        tf.keras.callbacks.TensorBoard(log_dir=f'{configs.model_path}/logs'),
+        tf.keras.callbacks.ModelCheckpoint(filepath=configs.model_path,
                                            save_weights_only=True),
         AutoSaveCallback()
     ]
 
     t1 = time.time()
-    model.fit(train_dataset, epochs=20, callbacks=callbacks, batch_size=12)
-
-    print(text_generator("大江东去", max_length=int(max_length / 2), do_sample=False))
+    model.fit(train_dataset, epochs=50, steps_per_epoch=1000, callbacks=callbacks, batch_size=None)
     print(f'total train time {t1 - time.time()}')
 
     model.save_pretrained(configs.model_path)
