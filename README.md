@@ -14,6 +14,8 @@ GPT2 Quickly
 
 This project is base on 🤗 transformer. This tutorial show how to train your own GPT2 model in a few code with Tensorflow 2.
 
+You can try this project in [colab](https://colab.research.google.com/github/mymusise/gpt2-quickly/blob/main/examples/gpt2_quickly.ipynb) right now.
+
 ## Main file
 
 ``` 
@@ -53,7 +55,7 @@ python build_tokenizer.py
 ## 0x02. Tokenize
 
 ```bash
-python predata.py
+python predata.py --n_processes=2
 ```
 
 
