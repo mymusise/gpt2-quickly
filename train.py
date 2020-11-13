@@ -1,12 +1,13 @@
 import tensorflow as tf
 from transformers import GPT2Config, TFGPT2LMHeadModel
 from transformers import TFGPT2LMHeadModel
-from transformers import BertTokenizer
-from transformers import GPT2Config
+from transformers import BertTokenizer, GPT2Tokenizer
 import configs
 from transformers import TextGenerationPipeline
 import time
 import pickle
+from pathlib import Path
+import numpy as np
 
 
 max_length = configs.model.max_length
@@ -20,24 +21,35 @@ def load_tokenizer() -> BertTokenizer:
 
 
 def get_dataset() -> tf.data.Dataset:
-    print(f"loading {configs.data.pickle}")
-    ids, labels = pickle.load(open(configs.data.pickle, 'rb'))
+    p = Path(configs.data.path)
+    pickle_files = p.glob('*.pickle')
+    ids, labels = [], []
+    for pickle_file in pickle_files:
+        print(f"loading {pickle_file}")
+        _ids, _labels = pickle.load(open(pickle_file, 'rb'))
+        if len(ids) == 0:
+            ids = _ids
+            labels = _labels
+        else:
+            ids = np.vstack((ids, _ids))
+            labels = np.vstack((labels, _labels))
     print(ids.shape, labels.shape, ids.dtype, labels.dtype)
     dataset = tf.data.Dataset.from_tensor_slices((
         ids,
         labels
-    )).shuffle(100000, reshuffle_each_iteration=True).batch(configs.model.batch_size)
+    )).shuffle(ids.shape[0], reshuffle_each_iteration=True).batch(configs.model.batch_size)
     return dataset
 
 
-def init_model(tokenizer) -> TFGPT2LMHeadModel:
+def init_model(tokenizer, model_path=configs.model_path) -> TFGPT2LMHeadModel:
 
     try:
-        model = TFGPT2LMHeadModel.from_pretrained(
-            f'{configs.model_path}', return_dict=True)
+        model = TFGPT2LMHeadModel.from_pretrained(model_path, return_dict=True)
     except EnvironmentError:
         config = GPT2Config(
             architectures=["TFGPT2LMHeadModel"],
+            model_type="TFGPT2LMHeadModel",
+            tokenizer_class="BertTokenizer",
             vocab_size=tokenizer.vocab_size,
             n_positions=configs.model.n_positions,
             n_ctx=configs.model.n_ctx,
@@ -63,7 +75,6 @@ def init_model(tokenizer) -> TFGPT2LMHeadModel:
     model.compile(
         optimizer=optimizer,
         loss=[loss, *[None] * model.config.n_layer],
-        # metrics=metrics,
     )
 
     return model
@@ -72,17 +83,9 @@ def init_model(tokenizer) -> TFGPT2LMHeadModel:
 def train():
     tokenizer = load_tokenizer()
     train_dataset = get_dataset()
-    model = init_model(tokenizer)
-
-    text_generator = TextGenerationPipeline(model, tokenizer)
+    model = init_model(tokenizer, configs.model_path)
 
     class AutoSaveCallback(tf.keras.callbacks.Callback):
-        def on_train_batch_begin(self, batch, logs=None):
-            save_pre_step = 5000
-            if batch % save_pre_step == 0:
-                self.model.save_pretrained(
-                    f'{configs.model_path}{batch // save_pre_step}')
-
         def on_epoch_end(self, epoch, logs=None):
             self.model.save_pretrained(f'{configs.model_path}')
 
@@ -94,10 +97,14 @@ def train():
     ]
 
     t1 = time.time()
-    model.fit(train_dataset, epochs=50, steps_per_epoch=1000, callbacks=callbacks, batch_size=None)
-    print(f'total train time {t1 - time.time()}')
-
-    model.save_pretrained(configs.model_path)
+    model.fit(
+        train_dataset,
+        epochs=50,
+        steps_per_epoch=2000,
+        callbacks=callbacks,
+        batch_size=None
+    )
+    print(f'total train time {time.time() - t1}')
 
 
 if __name__ == '__main__':
