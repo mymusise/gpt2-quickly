@@ -53,7 +53,10 @@ def multiply_encode(handler, tasks):
     #     input_ids += ids
 
     for job in jobs:
-        job.close()
+        try:
+            job.close() # It may raise exception in python <=3.6
+        except:
+            pass
     print("[all_task done]")
 
 
