@@ -1,5 +1,6 @@
 transformers
 tokenizers
 tensorflow
+tf-models-official
 tqdm
 click
