@@ -12,7 +12,7 @@ GPT2 Quickly
     </a>
 </p>
 
-This project is base on 🤗 transformer. This tutorial show how to train your own GPT2 model in a few code with Tensorflow 2.
+This project is base on 🤗 transformer. This tutorial show you how to train your own language(such as chinese or Japanese) GPT2 model in a few code with Tensorflow 2.
 
 You can try this project in [colab](https://colab.research.google.com/github/mymusise/gpt2-quickly/blob/main/examples/gpt2_quickly.ipynb) right now.
 
@@ -75,4 +75,5 @@ python predict.py
 ## 0x05 Fine-Tune
 
 ```bash
+ENV=FINETUNE python finetune.py
 ```
