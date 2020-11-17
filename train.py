@@ -68,7 +68,10 @@ def init_model(
                     "max_length": 120
                 }
             },
-            return_dict=False
+            return_dict=False,
+            output_attentions=False,
+            output_hidden_states=False,
+            use_cache=False,
         )
         model = TFGPT2LMHeadModel(config)
 
@@ -82,7 +85,7 @@ def init_model(
     model.compile(
         optimizer=optimizer,
         loss=[loss, *[None] * model.config.n_layer],
-        # metrics=[metric]
+        metrics=[metric]
     )
 
     return model
