@@ -5,18 +5,16 @@ from transformers import BertTokenizer
 import configs
 from official import nlp
 import official.nlp.optimization
+import click
 import time
 import pickle
 from pathlib import Path
 import numpy as np
 
 
-max_length = configs.model.max_length
-
-
 def load_tokenizer() -> BertTokenizer:
     tokenizer = BertTokenizer.from_pretrained(
-        configs.data.path, max_len=max_length)
+        configs.data.path, max_len=configs.model.max_length)
     tokenizer.return_attention_mask = None
     return tokenizer
 
@@ -44,13 +42,14 @@ def get_dataset() -> tf.data.Dataset:
 
 def init_model(
     tokenizer: BertTokenizer,
-    train_steps: int=20000,
-    num_warmup_steps: int=1000,
+    train_steps: int = 20000,
+    num_warmup_steps: int = 1000,
     model_path: str = configs.model_path,
 ) -> TFGPT2LMHeadModel:
 
     try:
-        model = TFGPT2LMHeadModel.from_pretrained(model_path, return_dict=True)
+        model = TFGPT2LMHeadModel.from_pretrained(
+            model_path, return_dict=False)
     except EnvironmentError:
         config = GPT2Config(
             architectures=["TFGPT2LMHeadModel"],
@@ -69,35 +68,30 @@ def init_model(
                     "max_length": 120
                 }
             },
+            return_dict=False
         )
         model = TFGPT2LMHeadModel(config)
 
     loss = model.compute_loss
-    # optimizer = tf.keras.optimizers.Adam(
-    #     learning_rate=1e-5, beta_1=0.9, beta_2=0.99, epsilon=1e-08)
     optimizer = nlp.optimization.create_optimizer(
         1e-5, num_train_steps=train_steps, num_warmup_steps=num_warmup_steps)
-    metrics = [
-        tf.keras.metrics.SparseCategoricalAccuracy('accuracy')
-    ]
+
+    metric = tf.keras.metrics.SparseCategoricalAccuracy('accuracy')
+    # metric = Mymetrice('accuracy')
 
     model.compile(
         optimizer=optimizer,
         loss=[loss, *[None] * model.config.n_layer],
+        # metrics=[metric]
     )
 
     return model
 
 
-def train():
-    epochs = 50
-    train_steps = 2000
-    warmup_step = int(train_steps * epochs * 0.1)
+def train(model, train_dataset, epochs, train_steps):
 
-    tokenizer = load_tokenizer()
-    train_dataset = get_dataset()
-    model = init_model(tokenizer, train_steps * epochs, warmup_step, configs.model_path)
-
+    def scheduler(epoch, lr):
+        return lr
 
     class AutoSaveCallback(tf.keras.callbacks.Callback):
         def on_train_batch_begin(self, batch, logs):
@@ -111,13 +105,13 @@ def train():
             self.model.save_pretrained(f'{configs.model_path}')
 
     callbacks = [
-        tf.keras.callbacks.TensorBoard(log_dir=f'{configs.model_path}/logs', update_freq=50),
-        # tf.keras.callbacks.ModelCheckpoint(filepath=configs.model_path,
-        #                                    save_weights_only=True),
+        tf.keras.callbacks.TensorBoard(
+            log_dir=f'{configs.model_path}/logs', update_freq=50),
         AutoSaveCallback()
     ]
 
     t1 = time.time()
+
     model.fit(
         train_dataset,
         epochs=epochs,
@@ -128,5 +122,18 @@ def train():
     print(f'total train time {time.time() - t1}')
 
 
+@click.command()
+@click.option('--epochs', default=20, help='number of epochs')
+@click.option('--train_steps', default=2000, help='number of train_steps')
+def main(epochs, train_steps):
+    warmup_steps = int(train_steps * epochs * 0.1)
+
+    tokenizer = load_tokenizer()
+    train_dataset = get_dataset()
+    model = init_model(tokenizer, train_steps * epochs,
+                       warmup_steps, configs.model_path)
+    train(model, train_dataset, epochs, train_steps)
+
+
 if __name__ == '__main__':
-    train()
+    main()
