@@ -12,13 +12,13 @@ data = {
 }
 
 model = {
-    'max_length': 64,
+    'max_length': 512,
     'n_positions': 512,
     'n_ctx': 512,
     'n_embd': 768,
     'n_layer': 8,
     'n_head': 8,
-    'batch_size': 6
+    'batch_size': 16
 }
 
 

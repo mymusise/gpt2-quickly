@@ -1,7 +1,7 @@
 import tensorflow as tf
 from transformers import GPT2Config, TFGPT2LMHeadModel
 from transformers import TFGPT2LMHeadModel
-from transformers import BertTokenizer
+from transformers import XLNetTokenizer
 import configs
 from official import nlp
 import official.nlp.optimization
@@ -10,11 +10,16 @@ import time
 import pickle
 from pathlib import Path
 import numpy as np
+# from tensorflow.keras.mixed_precision import experimental as mixed_precision
 
 
-def load_tokenizer() -> BertTokenizer:
-    tokenizer = BertTokenizer.from_pretrained(
-        configs.data.path, max_len=configs.model.max_length)
+# policy = mixed_precision.Policy('mixed_float16')
+# mixed_precision.set_policy(policy)
+
+
+def load_tokenizer() -> XLNetTokenizer:
+    tokenizer = XLNetTokenizer.from_pretrained(
+        configs.data.path, max_len=configs.model.max_length, add_special_token=False)
     tokenizer.return_attention_mask = None
     return tokenizer
 
@@ -36,12 +41,12 @@ def get_dataset() -> tf.data.Dataset:
     dataset = tf.data.Dataset.from_tensor_slices((
         ids,
         labels
-    )).shuffle(ids.shape[0], reshuffle_each_iteration=True).batch(configs.model.batch_size).repeat()
+    )).repeat().shuffle(ids.shape[0], reshuffle_each_iteration=True).batch(configs.model.batch_size)
     return dataset
 
 
 def init_model(
-    tokenizer: BertTokenizer,
+    tokenizer: XLNetTokenizer,
     train_steps: int = 20000,
     num_warmup_steps: int = 1000,
     model_path: str = configs.model_path,
@@ -54,7 +59,7 @@ def init_model(
         config = GPT2Config(
             architectures=["TFGPT2LMHeadModel"],
             model_type="TFGPT2LMHeadModel",
-            tokenizer_class="BertTokenizer",
+            tokenizer_class="XLNetTokenizer",
             vocab_size=tokenizer.vocab_size,
             n_positions=configs.model.n_positions,
             n_ctx=configs.model.n_ctx,
@@ -77,7 +82,7 @@ def init_model(
 
     loss = model.compute_loss
     optimizer = nlp.optimization.create_optimizer(
-        1e-5, num_train_steps=train_steps, num_warmup_steps=num_warmup_steps)
+        5e-6, num_train_steps=train_steps, num_warmup_steps=num_warmup_steps)
 
     metric = tf.keras.metrics.SparseCategoricalAccuracy('accuracy')
     # metric = Mymetrice('accuracy')
@@ -126,8 +131,8 @@ def train(model, train_dataset, epochs, train_steps):
 
 
 @click.command()
-@click.option('--epochs', default=20, help='number of epochs')
-@click.option('--train_steps', default=2000, help='number of train_steps')
+@click.option('--epochs', default=50, help='number of epochs')
+@click.option('--train_steps', default=1000, help='number of train_steps')
 def main(epochs, train_steps):
     warmup_steps = int(train_steps * epochs * 0.1)
 
@@ -139,4 +144,6 @@ def main(epochs, train_steps):
 
 
 if __name__ == '__main__':
-    main()
+    mirrored_strategy = tf.distribute.MirroredStrategy()
+    with mirrored_strategy.scope():
+        main()
