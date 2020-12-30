@@ -134,7 +134,7 @@ def train(model, train_dataset, epochs, train_steps):
 @click.option('--epochs', default=50, help='number of epochs')
 @click.option('--train_steps', default=1000, help='number of train_steps')
 def main(epochs, train_steps):
-    warmup_steps = int(train_steps * epochs * 0.1)
+    warmup_steps = 2000
 
     tokenizer = load_tokenizer()
     train_dataset = get_dataset()
