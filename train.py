@@ -1,7 +1,9 @@
 import tensorflow as tf
-from transformers import GPT2Config, TFGPT2LMHeadModel
-from transformers import TFGPT2LMHeadModel
+from transformers import GPT2Config
+# from transformers import TFGPT2LMHeadModel
 from transformers import XLNetTokenizer
+from transformers import BertTokenizer
+from performer import PerformerConfig, TFGPT2LMHeadModel
 import configs
 from official import nlp
 import official.nlp.optimization
@@ -17,8 +19,8 @@ import numpy as np
 # mixed_precision.set_policy(policy)
 
 
-def load_tokenizer() -> XLNetTokenizer:
-    tokenizer = XLNetTokenizer.from_pretrained(
+def load_tokenizer() -> BertTokenizer:
+    tokenizer = BertTokenizer.from_pretrained(
         configs.data.path, max_len=configs.model.max_length, add_special_token=False)
     tokenizer.return_attention_mask = None
     return tokenizer
@@ -46,7 +48,7 @@ def get_dataset() -> tf.data.Dataset:
 
 
 def init_model(
-    tokenizer: XLNetTokenizer,
+    tokenizer: BertTokenizer,
     train_steps: int = 20000,
     num_warmup_steps: int = 1000,
     model_path: str = configs.model_path,
@@ -56,16 +58,18 @@ def init_model(
         model = TFGPT2LMHeadModel.from_pretrained(
             model_path, return_dict=False)
     except EnvironmentError:
-        config = GPT2Config(
+        config = PerformerConfig(
             architectures=["TFGPT2LMHeadModel"],
             model_type="TFGPT2LMHeadModel",
-            tokenizer_class="XLNetTokenizer",
+            tokenizer_class="BertTokenizer",
             vocab_size=tokenizer.vocab_size,
             n_positions=configs.model.n_positions,
             n_ctx=configs.model.n_ctx,
             n_embd=configs.model.n_embd,
             n_layer=configs.model.n_layer,
             n_head=configs.model.n_head,
+            d_model=configs.model.n_embd,
+            num_heads=configs.model.n_head,
             pad_token_id=tokenizer.pad_token_id,
             task_specific_params={
                 "text-generation": {
@@ -82,7 +86,7 @@ def init_model(
 
     loss = model.compute_loss
     optimizer = nlp.optimization.create_optimizer(
-        5e-6, num_train_steps=train_steps, num_warmup_steps=num_warmup_steps)
+        5e-5, num_train_steps=train_steps, num_warmup_steps=num_warmup_steps)
 
     metric = tf.keras.metrics.SparseCategoricalAccuracy('accuracy')
     # metric = Mymetrice('accuracy')
@@ -134,7 +138,7 @@ def train(model, train_dataset, epochs, train_steps):
 @click.option('--epochs', default=50, help='number of epochs')
 @click.option('--train_steps', default=1000, help='number of train_steps')
 def main(epochs, train_steps):
-    warmup_steps = 2000
+    warmup_steps = 300
 
     tokenizer = load_tokenizer()
     train_dataset = get_dataset()
