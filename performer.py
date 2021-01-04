@@ -7,7 +7,7 @@ from transformers.models.gpt2.modeling_tf_gpt2 import TFMLP, TFAttention, TFConv
 from enum import Enum
 from typing import Sequence, Optional, Union
 from transformers.configuration_performer_attention import PerformerAttentionConfig, PerformerKernel, OrthogonalFeatureAlgorithm
-from fast_attention import Attention
+from fast_attention import SelfAttention as Attention
 
 
 class PerformerConfig(GPT2Config):
@@ -64,7 +64,7 @@ class TFBlock(tf.keras.layers.Layer):
         inner_dim = config.n_inner if config.n_inner is not None else 4 * nx
         self.ln_1 = tf.keras.layers.LayerNormalization(epsilon=config.layer_norm_epsilon, name="ln_1")
         # self.c_attn = TFConv1D(config.n_embd * 3, nx, initializer_range=config.initializer_range, name="c_attn")
-        self.attn = Attention(hidden_size=config.n_embd, num_heads=config.n_head, attention_dropout=0.1)
+        self.attn = Attention(hidden_size=config.n_embd, num_heads=config.n_head, n_embd=config.n_embd, attention_dropout=0.1, name="attn")
         self.ln_2 = tf.keras.layers.LayerNormalization(epsilon=config.layer_norm_epsilon, name="ln_2")
         self.mlp = TFMLP(inner_dim, config, name="mlp")
 
@@ -72,8 +72,7 @@ class TFBlock(tf.keras.layers.Layer):
         a = self.ln_1(x)
         # a = self.c_attn(a)
         # query, key, value = tf.split(a, 3, axis=2)
-        output_attn = self.attn(
-            a, a)
+        output_attn = self.attn(a)
         a = output_attn[0]  # output_attn: a, present, (attentions)
         x = x + a
 
@@ -81,7 +80,7 @@ class TFBlock(tf.keras.layers.Layer):
         m = self.mlp(m, training=training)
         x = x + m
 
-        outputs = [x] + [None]
+        outputs = [x] + [x]
         return outputs  # x, present, (attentions)
 
 
@@ -90,6 +89,7 @@ class TFGPT2MainLayer(TFGPT2MainLayer):
     def __init__(self, config, *inputs, **kwargs):
         super().__init__(config, *inputs, **kwargs)
         self.h = [TFBlock(config.n_ctx, config, scale=True, name="h_._{}".format(i)) for i in range(config.n_layer)]
+        self.ln_f = tf.keras.layers.LayerNormalization(epsilon=config.layer_norm_epsilon, name="ln_f")
 
 
 class TFGPT2LMHeadModel(TFGPT2LMHeadModel):
