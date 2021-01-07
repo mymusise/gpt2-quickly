@@ -12,21 +12,44 @@ import re
 
 
 def encode_processer(processer_num, texts, result_dict):
+    max_length = configs.model.max_length
     tokenizer = load_tokenizer()
     input_ids = []
-    for text in tqdm(texts):
-        text_encoded = tokenizer(
-            text, return_attention_mask=False, return_token_type_ids=False, padding="max_length")['input_ids']
-        input_ids += text_encoded
+    size_left = 32
+    last_encoded = None
+    real_size = max_length - size_left
+
+    for i in tqdm(range(len(texts) // 50)):
+        text = "".join(texts[i * 50: (i + 1) * 50])
+        text = text.replace('\n\n', '\n')
+        text_encoded = tokenizer(text, return_attention_mask=False,
+                                    return_token_type_ids=False, add_special_tokens=False)['input_ids']  # list
+        if last_encoded is not None:
+            text_encoded = last_encoded + text_encoded
+        batch_size = len(text_encoded) // real_size
+        last_size = len(text_encoded) % real_size
+        for i in range(batch_size):
+            if i == 0:
+                # [0, 0, ...] 1*size_left
+                fill_encoded = np.zeros([size_left], dtype=np.int).tolist()
+            else:
+                # last <size_left> token
+                fill_encoded = text_encoded[real_size*i-size_left:real_size*i]
+            current_encoded = fill_encoded + text_encoded[real_size*i: real_size*(i+1)]
+
+            assert len(current_encoded) == max_length
+
+            input_ids.append(current_encoded)
+
+        if last_size != 0:
+            last_encoded = text_encoded[-last_size:]
+        else:
+            last_encoded = None
+
     print(f"assert {processer_num} with {len(input_ids)}")
-    # result_dict[processer_num] = input_ids  
 
-    block_size = configs.model.max_length
-    text_len = len(input_ids) // block_size
     input_ids = np.array(input_ids)
-    input_ids.resize(text_len * block_size)
-    input_ids = input_ids.reshape((text_len, block_size))
-
+    input_ids = input_ids[1:]
     ids = input_ids[:, :-1]
     labels = input_ids[:, 1:]
     with open(configs.data.pickle.replace('.pickle', f'_{processer_num}.pickle'), 'wb') as f:
