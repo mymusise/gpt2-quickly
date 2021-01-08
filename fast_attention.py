@@ -1,17 +1,3 @@
-# coding=utf-8
-# Copyright 2020 The Google Research Authors.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 
 """Implementation of multiheaded FAVOR-attention & FAVOR-self-attention layers.
 Prefix Sum Tensorflow implementation by Valerii Likhosherstov.
@@ -165,14 +151,16 @@ def softmax_kernel_transformation(data,
       diag_data, axis=tf.keras.backend.ndim(data) - 1)
   diag_data = diag_data / 2.0
   diag_data = tf.expand_dims(diag_data, axis=tf.keras.backend.ndim(data) - 1)
+  last_dims_t = (len(data_dash.shape) - 1,)
+  attention_dims_t = (len(data_dash.shape) - 3,)
   if is_query:
-    last_dims_t = (len(data_dash.shape) - 1,)
     data_dash = ratio * (
         tf.math.exp(data_dash - diag_data - tf.math.reduce_max(
             data_dash, axis=last_dims_t, keepdims=True)) + numerical_stabilizer)
   else:
     data_dash = ratio * (
-        tf.math.exp(data_dash - diag_data - tf.math.reduce_max(data_dash)) +
+        tf.math.exp(data_dash - diag_data - tf.math.reduce_max(
+            data_dash, axis=last_dims_t + attention_dims_t, keepdims=True)) +
         numerical_stabilizer)
 
   return data_dash
@@ -202,6 +190,17 @@ def noncausal_denominator(qs, ks):
   all_ones = tf.ones([ks.shape[0]])
   ks_sum = tf.einsum("lbhm,l->bhm", ks, all_ones)
   return tf.einsum("lbhm,bhm->lbh", qs, ks_sum)
+
+
+def causal_attention_mask(nd, ns, dtype):
+    """
+    1's in the lower triangle, counting from the lower right corner. Same as tf.matrix_band_part(tf.ones([nd, ns]),
+    -1, ns-nd), but doesn't produce garbage on TPUs.
+    """
+    i = tf.range(nd)[:, None]
+    j = tf.range(ns)
+    m = i >= j - ns + nd
+    return tf.cast(m, dtype)
 
 
 @tf.custom_gradient
@@ -340,7 +339,6 @@ class Attention(tf.keras.layers.Layer):
   def __init__(self,
                hidden_size,
                num_heads,
-               n_embd,
                attention_dropout,
                kernel_transformation=relu_kernel_transformation,
                numerical_stabilizer=0.001,
@@ -369,7 +367,6 @@ class Attention(tf.keras.layers.Layer):
     super().__init__(**kwargs)
     self.hidden_size = hidden_size
     self.num_heads = num_heads
-    self.n_embd = n_embd
     self.attention_dropout = attention_dropout
     self.kernel_transformation = kernel_transformation
     self.numerical_stabilizer = numerical_stabilizer
@@ -377,27 +374,30 @@ class Attention(tf.keras.layers.Layer):
     self.projection_matrix_type = projection_matrix_type
     self.nb_random_features = nb_random_features
 
+  # def build(self, input_shape):
+  #   """Builds the layer."""
+  #   # Layers for linearly projecting the queries, keys, and values.
     size_per_head = self.hidden_size // self.num_heads
 
     def _glorot_initializer(fan_in, fan_out):
       limit = math.sqrt(6.0 / (fan_in + fan_out))
       return tf.keras.initializers.RandomUniform(minval=-limit, maxval=limit)
 
-    attention_initializer = _glorot_initializer(n_embd, self.hidden_size)
+    attention_initializer = _glorot_initializer(hidden_size, self.hidden_size)
     self.query_dense_layer = util.DenseEinsum(
         output_shape=(self.num_heads, size_per_head),
         kernel_initializer=attention_initializer,
-        use_bias=False,
+        use_bias=True,
         name="query")
     self.key_dense_layer = util.DenseEinsum(
         output_shape=(self.num_heads, size_per_head),
         kernel_initializer=attention_initializer,
-        use_bias=False,
+        use_bias=True,
         name="key")
     self.value_dense_layer = util.DenseEinsum(
         output_shape=(self.num_heads, size_per_head),
         kernel_initializer=attention_initializer,
-        use_bias=False,
+        use_bias=True,
         name="value")
 
     output_initializer = _glorot_initializer(self.hidden_size, self.hidden_size)
@@ -405,8 +405,9 @@ class Attention(tf.keras.layers.Layer):
         output_shape=self.hidden_size,
         num_summed_dimensions=2,
         kernel_initializer=output_initializer,
-        use_bias=False,
+        use_bias=True,
         name="output_transform")
+    # super(Attention, self).build(input_shape)
 
   def get_config(self):
     return {
@@ -452,8 +453,7 @@ class Attention(tf.keras.layers.Layer):
       projection_matrix = None
     else:
       dim = query.shape[-1]
-      seed = tf.math.ceil(tf.math.abs(tf.math.reduce_sum(query) * BIG_CONSTANT))
-      seed = tf.dtypes.cast(seed, tf.int32)
+      seed = 0
       projection_matrix = create_projection_matrix(
           self.nb_random_features, dim, seed=seed)
 
@@ -496,4 +496,3 @@ class SelfAttention(Attention):
            decode_loop_step=None):
     return super(SelfAttention, self).call(query_input, query_input, bias,
                                            training, cache, decode_loop_step)
-

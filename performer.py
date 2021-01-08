@@ -8,6 +8,14 @@ from enum import Enum
 from typing import Sequence, Optional, Union
 from transformers.configuration_performer_attention import PerformerAttentionConfig, PerformerKernel, OrthogonalFeatureAlgorithm
 from fast_attention import SelfAttention as Attention
+import json
+
+
+class EnumEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if issubclass(type(obj), Enum):
+            return {"__enum__": str(obj)}
+        return json.JSONEncoder.default(self, obj)
 
 
 class PerformerConfig(GPT2Config):
@@ -56,6 +64,24 @@ class PerformerConfig(GPT2Config):
 
         super().__init__(**kwargs)
 
+    def to_json_string(self, use_diff: bool = True) -> str:
+        """
+        Serializes this instance to a JSON string.
+
+        Args:
+            use_diff (:obj:`bool`, `optional`, defaults to :obj:`True`):
+                If set to ``True``, only the difference between the config instance and the default
+                ``PretrainedConfig()`` is serialized to JSON string.
+
+        Returns:
+            :obj:`str`: String containing all the attributes that make up this configuration instance in JSON format.
+        """
+        if use_diff is True:
+            config_dict = self.to_diff_dict()
+        else:
+            config_dict = self.to_dict()
+        return json.dumps(config_dict, indent=2, sort_keys=True, cls=EnumEncoder) + "\n"
+
 
 class TFBlock(tf.keras.layers.Layer):
     def __init__(self, n_ctx, config, scale=False, **kwargs):
@@ -64,7 +90,7 @@ class TFBlock(tf.keras.layers.Layer):
         inner_dim = config.n_inner if config.n_inner is not None else 4 * nx
         self.ln_1 = tf.keras.layers.LayerNormalization(epsilon=config.layer_norm_epsilon, name="ln_1")
         # self.c_attn = TFConv1D(config.n_embd * 3, nx, initializer_range=config.initializer_range, name="c_attn")
-        self.attn = Attention(hidden_size=config.n_embd, num_heads=config.n_head, n_embd=config.n_embd, attention_dropout=0.1, name="attn")
+        self.attn = Attention(hidden_size=config.n_embd, num_heads=config.n_head, attention_dropout=0.1, causal=True, nb_random_features=768, name="attn")
         self.ln_2 = tf.keras.layers.LayerNormalization(epsilon=config.layer_norm_epsilon, name="ln_2")
         self.mlp = TFMLP(inner_dim, config, name="mlp")
 
@@ -96,8 +122,8 @@ class TFGPT2LMHeadModel(TFGPT2LMHeadModel):
 
     def __init__(self, config, *inputs, **kwargs):
         super().__init__(config, *inputs, **kwargs)
-        assert hasattr(config, 'attention_dropout')
-        self.transformer = TFGPT2MainLayer(config, name="transformer")
+        # assert hasattr(config, 'attention_dropout')
+        # self.transformer = TFGPT2MainLayer(config, name="transformer")
 
 
 # pconfig = PerformerConfig()

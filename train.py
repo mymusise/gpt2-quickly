@@ -1,9 +1,9 @@
 import tensorflow as tf
 from transformers import GPT2Config
-# from transformers import TFGPT2LMHeadModel
+from transformers import TFGPT2LMHeadModel
 from transformers import XLNetTokenizer
 from transformers import BertTokenizer
-from performer import PerformerConfig, TFGPT2LMHeadModel
+# from performer import PerformerConfig, TFGPT2LMHeadModel
 import configs
 from official import nlp
 import official.nlp.optimization
@@ -58,7 +58,7 @@ def init_model(
         model = TFGPT2LMHeadModel.from_pretrained(
             model_path, return_dict=False)
     except EnvironmentError:
-        config = PerformerConfig(
+        config = GPT2Config(
             architectures=["TFGPT2LMHeadModel"],
             model_type="TFGPT2LMHeadModel",
             tokenizer_class="BertTokenizer",
