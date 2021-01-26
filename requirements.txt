@@ -1,6 +1,7 @@
 transformers
 tokenizers
 tensorflow
-tf-models-official
+#tf-models-official
 tqdm
 click
+sentencepiece

@@ -19,8 +19,8 @@ import numpy as np
 # mixed_precision.set_policy(policy)
 
 
-def load_tokenizer() -> BertTokenizer:
-    tokenizer = BertTokenizer.from_pretrained(
+def load_tokenizer() -> XLNetTokenizer:
+    tokenizer = XLNetTokenizer.from_pretrained(
         configs.data.path, max_len=configs.model.max_length, add_special_token=False)
     tokenizer.return_attention_mask = None
     return tokenizer
