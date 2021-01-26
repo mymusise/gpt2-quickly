@@ -1,7 +1,7 @@
 transformers==4.2
 tokenizers==0.9.4
 tensorflow
-#tf-models-official
+tf-models-official
 tqdm
 click
 sentencepiece==0.1.91
