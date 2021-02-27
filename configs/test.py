@@ -7,6 +7,7 @@ data = {
 data = {
     **data,
     'raw': data['path'] + 'raw.txt',
+    'raw_cut': data['path'] + 'raw.cut.txt',
     'vocab': data['path'] + 'vocab.txt',
     'pickle': data['path'] + 'data.pickle',
 }
