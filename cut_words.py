@@ -5,6 +5,7 @@ import click
 from typing import List
 import os
 from multiprocessing import Process, Manager, Queue
+from pathlib import Path
 
 
 def cut_words(processer_num, text, result_dict):
@@ -69,9 +70,9 @@ def preprocess(n_processes):
 
     multiply_cut(cut_words, text_task)
 
+    path = Path(configs.data.path)
     with open(configs.data.raw_cut, 'w') as all_cut_file:
-        for i in range(n_processes+1):
-            filename = os.path.join(configs.data.path, f'raw.cut.temp.{i}.txt')
+        for filename in path.glob('raw.cut.temp.*'):
             with open(filename) as cut_file:
                 all_cut_file.write(cut_file.read()+'\n')
                 print(f'dropping {filename}')
