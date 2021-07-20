@@ -14,7 +14,7 @@ GPT2 Quickly
 
 This project is base on 🤗 transformer. This tutorial show you how to train your own language(such as chinese or Japanese) GPT2 model in a few code with Tensorflow 2.
 
-You can try this project in [colab](https://colab.research.google.com/github/jshongtw/100WORDS-GENERATOR/blob/main/examples/gpt2_quickly.ipynb) right now.
+You can try this project in [colab](https://colab.research.google.com/github/jshongtw/100WORDS-GENERATOR/blob/main/examples/100word.ipynb) right now.
 
 ## Main file
 
