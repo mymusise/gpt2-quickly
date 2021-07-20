@@ -7,7 +7,7 @@ GPT2 Quickly
 </h3>
 
 <p align="center">
-    <a href="https://colab.research.google.com/github/mymusise/gpt2-quickly/blob/main/examples/gpt2_quickly.ipynb">
+    <a href="https://colab.research.google.com/github/jshongtw/100WORDS-GENERATOR/blob/main/examples/100word.ipynb">
         <img alt="Build" src="https://colab.research.google.com/assets/colab-badge.svg">
     </a>
 </p>
