@@ -1,4 +1,4 @@
-path = './dataset'
+path = '/content/drive/MyDrive/100word'
 model_path = path + '/models/'
 
 data = {
