@@ -2,10 +2,11 @@ from transformers import TextGenerationPipeline
 from transformers import GPT2Tokenizer
 from train import init_model, load_tokenizer
 import string
+import random
+import datetime
+from datetime import datetime
 
-
-
-
+now = datetime.now()
 
 tokenizer = load_tokenizer()
 model = init_model(tokenizer)
@@ -18,19 +19,24 @@ pathout = '/content/drive/MyDrive/100word/test/ai100-chinese.txt'
 f = open(path, 'r',encoding="utf-8")
 fout = open(pathout, 'w',encoding="utf-8")
 
-for k in range(10):
-  line = f.readline()
+dtitle = '國文課程學習成果100字簡述- '+ now.strftime("%d/%m/%Y %H:%M:%S") + '\n\n'
+fout.write(dtitle)
+
+for k in range(900):
+  rand = random.randint(1,100)
+  for r in range(rand):
+    line = f.readline()
+
   input = line.strip('】\n')
-  line2 = f.readline()
   print(k,'原 : ',input)
-  fout.write(input)
-  fout.write('\n')
-  glist = text_generator((input[:5]), max_length=50, do_sample=True, top_k=20, repetition_penalty=1.3)
-  print(k,'AI : ',glist[0]["generated_text"])
-  if (input[:6] != glist[0]["generated_text"][:6]):
-    fout.write(glist[0]["generated_text"])
-    fout.write('\n')
-  print('\n')
+
+
+  glist = text_generator((input[:7]), max_length=90, do_sample=True, top_k=20, repetition_penalty=1.3)
+  sentence = str(k).zfill(6) + ': '+ glist[0]["generated_text"] + '...'+ '\n'
+  print(sentence)
+  if (input[:6] != glist[0]["generated_text"][:10]):
+    fout.write(sentence)
+
 
 f.close()
 fout.close()
