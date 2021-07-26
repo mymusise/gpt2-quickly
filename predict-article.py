@@ -47,8 +47,8 @@ for k in range(1):
 
     fout.write(output_sentence)
     fout.write('\n')
-    print('glist[0]["generated_text"]',glist[0]["generated_text"])
-    feedin = seedtopic + (glist[0]["generated_text"].split('，')[2])
+
+    feedin = seedtopic 
     print('feedin', feedin)
 
 
