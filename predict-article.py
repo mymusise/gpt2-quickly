@@ -29,15 +29,15 @@ for k in range(10):
     line = f.readline()
 
   original_line = line.strip('\n')
-  print(k,'原 : ',original_line)
+  print(k,'原文 : ',original_line)
   fout.write(original_line)
-
+  feedin = (original_line[:20])
 #產出一段一段
   for d in range(10):
-    feedin = (original_line[:10])
+    
 
     glist = text_generator(feedin, max_length=250, do_sample=True, top_k=20, repetition_penalty=1.3)
-    output_sentence = str(k).zfill(2) + str(d) + '段: '+ glist[0]["generated_text"] + '\n' 
+    output_sentence = str(k).zfill(2) + '文章-'+ str(d).zfill(2) + '段:  '+ glist[0]["generated_text"] + '\n' 
     print(output_sentence)
 
     if feedin in output_sentence:
