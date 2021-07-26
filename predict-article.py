@@ -20,31 +20,36 @@ pathout = '/content/drive/MyDrive/100word/test/國文課程成果-'+ now.strftim
 f = open(path, 'r',encoding="utf-8")
 fout = open(pathout, 'w',encoding="utf-8")
 
-dtitle = '國文課程學習成果100字簡述- '+ now.strftime("%d/%m/%Y %H:%M:%S") + '\n\n'
+dtitle = '國文課程學習成果100字簡述 '+ now.strftime("%d/%m/%Y %H:%M:%S") + '\n\n'
 fout.write(dtitle)
 
-for k in range(10):
+for k in range(1):
   rand = random.randint(1,100)
   for r in range(rand):
     line = f.readline()
 
-  original_line = line.strip('\n')
+#  original_line = line.strip('\n')
+  original_line = line  
   print(k,'原文 : ',original_line)
-  fout.write(original_line)
-  feedin = (original_line[:20])
+  fout.write(('原文: '+ original_line+ '\n'))
+  seedtopic = '紅樓夢是我最喜歡的書。'
+  feedin = seedtopic + (original_line.split('，')[0])
+  print('feedin', feedin)
 #產出一段一段
-  for d in range(10):
+  for d in range(2):
     
-
-    glist = text_generator(feedin, max_length=250, do_sample=True, top_k=20, repetition_penalty=1.3)
-    output_sentence = str(k).zfill(2) + '文章-'+ str(d).zfill(2) + '段:  '+ glist[0]["generated_text"] + '\n' 
+    glist = text_generator(feedin, max_length=200, do_sample=True, top_k=10, repetition_penalty=1.3)
+    output_sentence = '第'+str(k).zfill(3) + '文章'+ '第'+ str(d).zfill(2) + '段:  '+ glist[0]["generated_text"] + '\n' 
     print(output_sentence)
 
     if feedin in output_sentence:
       output_sentence = output_sentence.replace(feedin,'')
 
     fout.write(output_sentence)
-    feedin = output_sentence[230:250]
+    fout.write('\n')
+    print('glist[0]["generated_text"]',glist[0]["generated_text"])
+    feedin = seedtopic + (glist[0]["generated_text"].split('，')[2])
+    print('feedin', feedin)
 
 
 f.close()
