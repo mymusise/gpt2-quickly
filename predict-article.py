@@ -14,7 +14,8 @@ model = init_model(tokenizer)
 text_generator = TextGenerationPipeline(model, tokenizer)
 
 path = '/content/drive/MyDrive/100word/test/raw.txt'
-pathout = '/content/drive/MyDrive/100word/test/ai100-chinese.txt'
+
+pathout = '/content/drive/MyDrive/100word/test/國文課程成果-'+ now.strftime("%d-%m-%Y-%H-%M-%S") +'.txt'
 
 f = open(path, 'r',encoding="utf-8")
 fout = open(pathout, 'w',encoding="utf-8")
@@ -22,20 +23,28 @@ fout = open(pathout, 'w',encoding="utf-8")
 dtitle = '國文課程學習成果100字簡述- '+ now.strftime("%d/%m/%Y %H:%M:%S") + '\n\n'
 fout.write(dtitle)
 
-for k in range(900):
+for k in range(10):
   rand = random.randint(1,100)
   for r in range(rand):
     line = f.readline()
 
-  input = line.strip('】\n')
-  print(k,'原 : ',input)
+  original_line = line.strip('\n')
+  print(k,'原 : ',original_line)
+  fout.write(original_line)
 
+#產出一段一段
+  for d in range(10):
+    feedin = (original_line[:10])
 
-  glist = text_generator((input[:7]), max_length=90, do_sample=True, top_k=20, repetition_penalty=1.3)
-  sentence = str(k).zfill(6) + ': '+ glist[0]["generated_text"] + '...'+ '\n'
-  print(sentence)
-  if (input[:6] != glist[0]["generated_text"][:10]):
-    fout.write(sentence)
+    glist = text_generator(feedin, max_length=250, do_sample=True, top_k=20, repetition_penalty=1.3)
+    output_sentence = str(k).zfill(2) + str(d) + '段: '+ glist[0]["generated_text"] + '\n' 
+    print(output_sentence)
+
+    if feedin in output_sentence:
+      output_sentence = output_sentence.replace(feedin,'')
+
+    fout.write(output_sentence)
+    feedin = output_sentence[230:250]
 
 
 f.close()
