@@ -32,11 +32,12 @@ for k in range(1):
   original_line = line  
   print(k,'原文 : ',original_line)
   fout.write(('原文: '+ original_line+ '\n'))
-  seedtopic = '紅樓夢是我最喜歡的書。'
-  feedin = seedtopic + (original_line.split('，')[0])
+  seedtopic = '這次的主題是魯迅。'
+  feedin = seedtopic + original_line[0:9]
+#  feedin = seedtopic
   print('feedin', feedin)
 #產出一段一段
-  for d in range(2):
+  for d in range(10):
     
     glist = text_generator(feedin, max_length=200, do_sample=True, top_k=10, repetition_penalty=1.3)
     output_sentence = '第'+str(k).zfill(3) + '文章'+ '第'+ str(d).zfill(2) + '段:  '+ glist[0]["generated_text"] + '\n' 
@@ -48,8 +49,8 @@ for k in range(1):
     fout.write(output_sentence)
     fout.write('\n')
 
-    feedin = seedtopic 
-    print('feedin', feedin)
+#    feedin = seedtopic 
+
 
 
 f.close()
