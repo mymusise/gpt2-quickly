@@ -1,6 +1,8 @@
 transformers==4.2
 tokenizers==0.9.4
-tensorflow
+tensorflow==2.7.0
+keras==2.7.0
+
 tf-models-official
 tqdm
 click
