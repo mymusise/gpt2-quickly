@@ -12,7 +12,7 @@ GPT2 Quickly
     </a>
 </p>
 
-This project is base on 🤗 transformer. This tutorial show you how to train your own language(such as chinese or Japanese) GPT2 model in a few code with Tensorflow 2.
+This project is base on 🤗 transformer. This tutorial show you how to train your own language(such as Chinese or Japanese) GPT2 model in a few code with Tensorflow 2.
 
 You can try this project in [colab](https://colab.research.google.com/github/mymusise/gpt2-quickly/blob/main/examples/gpt2_quickly.ipynb) right now.
 
@@ -48,6 +48,7 @@ this is a example of raw dataset: [raw.txt](dataset/test/raw.txt)
 ## 0x01. Build vocab
 
 ```bash
+python cut_words.py
 python build_tokenizer.py
 ```
 

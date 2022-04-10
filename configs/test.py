@@ -1,3 +1,5 @@
+import os
+
 path = './dataset'
 model_path = path + '/models/'
 
@@ -10,10 +12,11 @@ data = {
     'raw_cut': data['path'] + 'raw.cut.txt',
     'vocab': data['path'] + 'vocab.txt',
     'pickle': data['path'] + 'data.pickle',
+    'pickle_path': os.path.join(data['path'], 'pickle')
 }
 
 model = {
-    'max_length': 64,
+    'max_length': 512,
     'n_positions': 512,
     'n_ctx': 512,
     'n_embd': 768,
