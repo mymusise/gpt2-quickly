@@ -1,5 +1,5 @@
 from train import load_tokenizer
-from multiprocessing import Process, Manager, Queue
+from multiprocessing import Process
 from tqdm import tqdm
 from typing import List
 import tensorflow as tf
@@ -8,61 +8,63 @@ import json
 import configs
 import numpy as np
 import click
-import re
+import os
+import random
+import time
+import gc
 
 
-def encode_processer(processer_num, texts, result_dict):
-    max_length = configs.model.max_length
+def encode_processer(processer_num: int):
     tokenizer = load_tokenizer()
-    input_ids = []
-    size_left = 32  # TODO: make size_left dynamical
-    last_encoded = None
-    real_size = max_length - size_left
-
-    for i in tqdm(range(len(texts) // 50)):
-        text = "".join(texts[i * 50: (i + 1) * 50])
-        text = text.replace('\n\n', '\n')
-        text_encoded = tokenizer(text, return_attention_mask=False,
-                                    return_token_type_ids=False, add_special_tokens=False)['input_ids']  # list
-        if last_encoded is not None:
-            text_encoded = last_encoded + text_encoded
-        batch_size = len(text_encoded) // real_size
-        last_size = len(text_encoded) % real_size
-        for i in range(batch_size):
-            if i == 0:
-                # [0, 0, ...] 1*size_left
-                fill_encoded = np.zeros([size_left], dtype=np.int).tolist()
-            else:
-                # last <size_left> token
-                fill_encoded = text_encoded[real_size*i-size_left:real_size*i]
-            current_encoded = fill_encoded + text_encoded[real_size*i: real_size*(i+1)]
-
-            assert len(current_encoded) == max_length
-
-            input_ids.append(current_encoded)
-
-        if last_size != 0:
-            last_encoded = text_encoded[-last_size:]
+    contents = pickle.load(open(os.path.join(configs.data.pickle_path, f'data.{processer_num}.jsonp'), 'rb'))
+    contents = contents.split('\n\n|-|\n\n')
+    output_file_l = open(os.path.join(configs.data.pickle_path, f'data.{processer_num}.l.pickle'), 'wb')
+    output_file_m = open(os.path.join(configs.data.pickle_path, f'data.{processer_num}.m.pickle'), 'wb')
+    output_file_s = open(os.path.join(configs.data.pickle_path, f'data.{processer_num}.s.pickle'), 'wb')
+    for content in tqdm(contents, desc=f"processer_{processer_num}"):
+        if len(content) < 24:
+            continue
+        if len(content) <= 64 - 2:
+            pre_size = 64
+            output_file = output_file_s
+        elif 64 - 2 < len(content) <= 128 - 2:
+            pre_size = 128
+            output_file = output_file_m
         else:
-            last_encoded = None
+            pre_size = configs.model.max_length 
+            output_file = output_file_l
+        content = tokenizer.sep_token + content + tokenizer.cls_token
+        content_decoded = tokenizer(content, return_attention_mask=False,
+                                    return_token_type_ids=False, add_special_tokens=False)['input_ids']
 
-    print(f"assert {processer_num} with {len(input_ids)}")
+        if len(content_decoded) > pre_size:
+            end_left_size = 64
+            block_size = (pre_size - end_left_size)
+            block_num = (len(content_decoded) - pre_size) // block_size
+            block_num += 1 if (len(content_decoded) -
+                            pre_size) % block_size != 0 else 0
+            new_content = [content_decoded[:pre_size]]
+            for i in range(block_num):
+                _block = content_decoded[pre_size + i *
+                                        block_size-end_left_size:pre_size + (i+1)*block_size]
+                new_content.append(_block)
+        else:
+            new_content = [content_decoded]
+        if len(new_content[-1]) < pre_size and len(new_content) > 1:
+            new_content[-1] = new_content[-2][-(pre_size - len(new_content[-1])):] + new_content[-1]
+        else:
+            new_content[-1] = new_content[-1] + [tokenizer.pad_token_id] * (pre_size - len(new_content[-1]))
+        if len(new_content) > 0:
+            input_ids = np.array(new_content, dtype=np.int32)
+            output_file.write(pickle.dumps(input_ids)+'换行'.encode())
 
-    input_ids = np.array(input_ids)
-    input_ids = input_ids[1:]
-    ids = input_ids[:, :-1]
-    labels = input_ids[:, 1:]
-    with open(configs.data.pickle.replace('.pickle', f'_{processer_num}.pickle'), 'wb') as f:
-        pickle.dump((ids, labels), f)
 
 
-def multiply_encode(handler, tasks):
-    manager = Manager()
-    result_dict = manager.dict()  # didn't work and don't know why
+def multiply_encode(handler, n_processes):
     jobs = []
-    for processer_num, task in enumerate(tasks):
+    for processer_num in range(n_processes):
         p = Process(target=handler, args=(
-            processer_num, task, result_dict))
+            processer_num, ))
         jobs.append(p)
 
     for job in jobs:
@@ -71,43 +73,25 @@ def multiply_encode(handler, tasks):
     for job in jobs:
         job.join()
 
-    # input_ids = []  # don't know why it didn't work
-    # for processer_num, ids in result_dict.items():
-    #     input_ids += ids
-
     for job in jobs:
-        try:
-            job.close() # It may raise exception in python <=3.6
-        except:
-            pass
+        job.close()  # It may raise exception in python <=3.6
     print("[all_task done]")
 
 
 def split_data(
-        text,
+        texts,
         n_processes,
         block_size,
         split_token_re=r"(。|？|！|\n)",
 ) -> List[str]:
-    texts = []
-    datas = re.split(split_token_re, text)
-    max_length = block_size - 2
-    stack = ""
-    print('merging data')
-    for i, data in enumerate(datas):
-        if len(stack) + len(data) <= max_length:
-            stack += data
-        else:
-            texts.append(stack)
-            stack = ""
-    texts.append(stack)
-
-    print('merged')
-    text_task = []
     num_pre_task = len(texts) // n_processes
-    for i in range(0, len(texts), num_pre_task):
-        text_task.append(texts[i: i + num_pre_task])
-    return text_task
+    print(num_pre_task, len(texts), n_processes)
+    for _i, i in tqdm(enumerate(range(0, len(texts), num_pre_task)), desc="spliting data..."):
+        current_text = texts[i: i + num_pre_task]
+        with open(os.path.join(configs.data.pickle_path, f'data.{_i}.jsonp'), 'wb') as output_file:
+            pickle.dump(current_text, output_file)
+        print("pre task num: ", len(current_text))
+        del current_text
 
 
 @click.command()
@@ -116,14 +100,21 @@ def preprocess(n_processes):
     block_size = configs.model.max_length
 
     print(f'reading {configs.data.raw}')
+
+    data = []
+    print('reading raw data ...')
     with open(configs.data.raw, 'r') as f:
-        data = f.read().replace('  ', ' ').replace('\n\n', '\n')
-        print(f"total words: {len(data)}")
-
-    text_task = split_data(data, n_processes, block_size)
-    print("num of task: ", len(text_task))
-
-    multiply_encode(encode_processer, text_task)
+        for line in tqdm(list(f.readlines())):
+            if len(line) > 0:
+                data.append(line)
+            del line
+    random.shuffle(data)
+    data = "\n\n|-|\n\n".join(data)
+    split_data(data, n_processes, block_size)
+    del data
+    gc.collect()
+    # time.sleep(1000)
+    multiply_encode(encode_processer, n_processes)
 
 
 if __name__ == '__main__':
