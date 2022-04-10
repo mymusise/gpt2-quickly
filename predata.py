@@ -15,7 +15,7 @@ def encode_processer(processer_num, texts, result_dict):
     max_length = configs.model.max_length
     tokenizer = load_tokenizer()
     input_ids = []
-    size_left = 32
+    size_left = 32  # TODO: make size_left dynamical
     last_encoded = None
     real_size = max_length - size_left
 
@@ -99,14 +99,7 @@ def split_data(
             stack += data
         else:
             texts.append(stack)
-            if i > 0:
-                if len(datas[i-1]) == 1 and i > 1:
-                    pre_text = datas[i-2] + datas[i-1]
-                else:
-                    pre_text = datas[i-1]
-                stack = pre_text + data
-            else:
-                stack = data
+            stack = ""
     texts.append(stack)
 
     print('merged')
