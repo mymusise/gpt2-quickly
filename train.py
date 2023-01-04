@@ -4,9 +4,7 @@ from transformers import TFGPT2LMHeadModel
 from transformers import XLNetTokenizer
 from transformers import BertTokenizer
 from transformers.modeling_tf_utils import shape_list
-# from performer import PerformerConfig, TFGPT2LMHeadModel
 import configs
-from official import nlp
 import random
 import click
 import time
@@ -152,8 +150,8 @@ def init_model(
             use_cache=False,
         )
         model = TFGPT2LMHeadModel(config)
-    # loss = build_loss(tokenizer)
-    loss = model.compute_loss
+    loss = build_loss(tokenizer)
+    # loss = model.compute_loss
     lr = 5e-5
     optimizer = tf.keras.optimizers.Adam(learning_rate=lr, beta_1=0.9, beta_2=0.999, epsilon=1e-08)
     metric = CustomAccuracy("accuracy", tokenizer=tokenizer)

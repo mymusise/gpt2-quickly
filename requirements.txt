@@ -1,9 +1,9 @@
-transformers==4.11.0
-tokenizers==0.9.4
-tensorflow==2.7.0
-keras==2.7.0
+transformers==4.18.0
+tokenizers==0.12.1
+tensorflow==2.9.1
+keras==2.9.0
 
-tf-models-official
 tqdm
 click
+jieba
 sentencepiece==0.1.91

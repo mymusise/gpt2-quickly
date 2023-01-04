@@ -31,6 +31,8 @@ You can try this project in [colab](https://colab.research.google.com/github/mym
 
 ## Preparation
 
+
+### virtualenv
 ``` bash
 git clone git@github.com:mymusise/gpt2-quickly.git
 cd gpt2-quickly
@@ -39,6 +41,11 @@ source venv/bin/activate
 
 pip install -r requirements.txt
 ```
+
+### Install google/sentencepiece
+
+- see [https://github.com/google/sentencepiece#installation](https://github.com/google/sentencepiece#installation)
+
 
 ## 0x00. prepare your raw dataset
 
